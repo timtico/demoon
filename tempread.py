@@ -44,7 +44,7 @@ class HDTemperature():
         response =  subprocess.check_output(args).splitlines()
         return [l.strip().decode("utf-8") for l in response]
 
-    def get_temps(self):
+    def get_max_temp(self):
         """
         Take the temperature a list of hdds, return the maximum value in this list
 
@@ -53,9 +53,9 @@ class HDTemperature():
         """
         raw = self.run_hddtemp()
         temps = self.parse(raw)
-        return max(temps)
+        return int(max(temps))
 
 if __name__ == '__main__':
     hd = HDTemperature(['/dev/sdc', '/dev/sdc1'])
-    print(hd.get_temps())
+    print(hd.get_max_temp())
 
