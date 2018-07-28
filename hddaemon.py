@@ -3,27 +3,20 @@
 from daemon import Daemon
 import fancontrol
 import tempread
+import config
+import time
 
 class HDDaemon(Daemon):
     def __init__(self, config_file, *args, **kwargs):
-        #Daemon.__init__(self, *args, **kwargs)
-        #control = hddcontrol.HDDDaemon 
         super(HDDDaemon, self).__init__(*args, **kwargs)
-        self.configuration = self.parse_config(config_file)
-        self.temp_control = hddcontrol.HDDTemperature(self.configuration) 
-        self.temp_reader =  
+        self.configuration = config.parse_config(config_file)
+        self.fan_control = fancontrol.FanControl(self.configuration)
+        self.temp_read = tempread.HDTemperature(self.configuration['disks'])
+        self.interval = self.configuration['interval']
 
-    def parse_config(self, config_file):
-        """
-        Parse the configuration file and return it as a dictionary
-        The keys and values of the dictionary are encoded to UTF-8
-        """ 
-        parser = configparser.ConfigParser()
-        with open(config_file) as f:
-            config_string = '[top]\n' + f.read()
-        parser.read_string(config_string.decode("UTF-8"))
-        return {k.encode("utf-8") : v.encode("utf-8") for k,v in dict(parser['top']).items()}
-    
     def run(self):
-        pass
-        
+        while True:
+            max_t = self.temp_read.get_max_temp()
+            self.fan_control.adjust_to_temp(max_t)
+            time.sleep(self.interval)
+            
