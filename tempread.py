@@ -3,6 +3,7 @@
 import subprocess
 import sys
 import re 
+import logging
 
 class HDTemperature():
     """
@@ -11,7 +12,8 @@ class HDTemperature():
 
     :param hdd_list: A list of harddrive locations 
     """
-    def __init__(self, hdd_list):
+    def __init__(self, hdd_list, logger_name):
+        self.logger = logging.getLogger(logger_name)
         self.re_hddtemp = re.compile(".+?\:.+?\:\s(\d\d)")
         self.hdd_list = hdd_list
         self.hddtemp_bin = self.get_hddtemp_bin()

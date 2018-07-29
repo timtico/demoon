@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-import configparser
-import itertools
 import os
+import logging
 
 class FanControl():
     """
@@ -10,11 +9,12 @@ class FanControl():
 
     :param config: configuration dictionary
     """
-    def __init__(self, config):
+    def __init__(self, config, logger_name):
+        self.logger = logging.getLogger(logger_name)
         self.configuration = config
-        print(self.configuration)
         self.current_pwm = 0
-        self.pwm_address = os.path.join("/sys/class/", str(self.configuration['fan_address']))
+        self.pwm_address = os.path.join("/sys/class/hwmon/", str(self.configuration['fan_address']))
+        self.logger.info("Controlling fan with pwm: {}".format(self.pwm_address))
         self.mintemp = float(self.configuration['mintemp'])
         self.maxtemp = float(self.configuration['maxtemp'])
         self.minstop = int(self.configuration['minstop'])
@@ -57,9 +57,11 @@ class FanControl():
         if self.decide_on(temp):
             if self.current_pwm != self.maxpwm:
                 self.start_fan()
+        else:
+            self.stop_fan()
 
 if __name__ == '__main__':
-    h = HDDTemperature('./config/hddaemon.conf')
+    h = FanControl('./config/hddaemon.conf')
     h.adjust_to_temp(60)
     print(h.current_pwm)
     
