@@ -18,9 +18,9 @@ class FanControl():
         self.mintemp = float(self.configuration['mintemp'])
         self.maxtemp = float(self.configuration['maxtemp'])
         self.minstop = int(self.configuration['minstop'])
+        self.minpwm = int(self.configuration['minpwm'])
         self.minstart = int(self.configuration['minstart'])
         self.maxpwm = int(self.configuration['maxpwm'])
-
 
     def set_pwm(self,pwm_value):
         """

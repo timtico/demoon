@@ -54,7 +54,6 @@ class Daemon:
         ''' writes a pidfile that contains the pid id in '''
         self.logger.info("Creating lockfile {}".format(self.pidfile))
         with open(self.pidfile, 'w+') as f:
-            self.logger.info("creating pidfile with pid {}".format(pid))
             f.write(pid + '\n')
 
     def delete_pidfile(self):

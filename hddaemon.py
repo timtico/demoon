@@ -37,7 +37,7 @@ class HDDaemon(Daemon):
 
 
 if __name__ == '__main__':
-    d = HDDaemon(config_file = './config/hddaemon.conf', pid_file = '/tmp/mydemon.pid')
+    d = HDDaemon(config_file = './config/hddaemon.conf')
 
     if len(sys.argv) == 2:
         command = sys.argv[1]
