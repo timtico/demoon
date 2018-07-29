@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
 
 ''' Class that lets a python script run in demon mode
 The code is taken and modified from `A simple unix/linux 
@@ -9,65 +8,18 @@ import os
 import time
 import atexit
 import signal
-import logging
-import logging.handlers
-
-class StdErrFilter(logging.Filter):
-    ''' log messages of level warning and error will be forwarded '''
-    def filter(self, rec):
-        return rec.levelno in (logging.ERROR, logging.WARNING)
-
-class StdOutFilter(logging.Filter):
-    ''' Only log messages of level info and debug will be forwarded
-    to the stdout '''
-    def filter(self, rec):
-        return rec.levelno in (logging.DEBUG, logging.INFO)
-
-
-class SplitLogger():
-    ''' the methods in this class generate a Splitlogger
-    in this logger all messages with level info and debug will
-    be forwarded to the stdout, while all message of level warning
-    and error will be forwarded to the stderr '''
-
-    @classmethod
-    def get_logger(cls, facility = 'local3', address = '/dev/log'):
-        ''' generates a logger with two streams. All loglevels of INFO or lower
-        will be sent to the standard out, all messages of WARNING and higher 
-        will be sent to standard error '''
-        logger = logging.getLogger('__name__')
-        logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            '%(asctime)s %(module)s %(levelname)s: %(message)s')
-
-        # add streaming handler for stdout
-        h1 = logging.StreamHandler(sys.stdout)
-        h1.setLevel(logging.DEBUG)
-        h1.setFormatter(formatter)
-        h1.addFilter(StdOutFilter())
-        logger.addHandler(h1)
-
-        # add streaming handler for stderr
-        h2 = logging.StreamHandler(sys.stderr)
-        h2.setLevel(logging.WARNING)
-        h2.setFormatter(formatter)
-        h2.addFilter(StdErrFilter())
-        logger.addHandler(h2)
-
-        syslog_handler = logging.handlers.SysLogHandler(facility= facility, address= address)
-        logger.addHandler(syslog_handler)
-        return logger
+import logger
 
 class Daemon:
     ''' generic daemon class
     usage: subclass and override the run() method '''
 
-    def __init__(self, pidfile = None):
-        if not pidfile:
+    def __init__(self, logger_name = '__name__', pid_file = None):
+        if not pid_file:
             self.pidfile = os.path.join("/run/lock/", type(self).__name__ + ".lock")
         else:
-            self.pidfile = pidfile
-        self.logger = SplitLogger.get_logger()
+            self.pidfile = pid_file
+        self.logger = logger.SplitLogger.get_logger(logger_name)
 
     def fork(self, n):
         ''' performs a fork, this should be done twice when daemonizing. 
@@ -102,6 +54,7 @@ class Daemon:
         ''' writes a pidfile that contains the pid id in '''
         self.logger.info("Creating lockfile {}".format(self.pidfile))
         with open(self.pidfile, 'w+') as f:
+            self.logger.info("creating pidfile with pid {}".format(pid))
             f.write(pid + '\n')
 
     def delete_pidfile(self):
@@ -137,10 +90,11 @@ class Daemon:
         # redirect file descriptors
         self.redirect_file_descriptors()
 
-
         # register function to be executed at termination
         # the pidfile should be deleted on exiting
         atexit.register(self.delete_pidfile)
+
+
 
     def read_pidfile(self):
         ''' Check for a pidfile. If pidfile exists it is returned
@@ -198,6 +152,4 @@ class Daemon:
     def run(self):
         ''' overwrite this method to create your own daemon. it 
         will be called after the demon is started or restarted '''
-        while True:
-            self.logger.info('hello pluto!')
-            time.sleep(1)
+        pass
