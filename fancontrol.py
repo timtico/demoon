@@ -41,7 +41,7 @@ class FanControl():
         """
         stop the fan from spinning 
         """
-        self.set_pwm(self.minstop)
+        self.set_pwm(self.minpwm)
 
     def start_fan(self):
         """
