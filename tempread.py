@@ -21,7 +21,7 @@ class HDTemperature():
     def get_hddtemp_bin(self):
         """
         Use linux which to determine if and where the hddtemp binary is installed
-        Exit if hddtemp is not installed
+        Exit if hddtemp is not installed. 
         """
         try:
             location = subprocess.check_output(["/usr/bin/which", "hddtemp"])
@@ -30,21 +30,15 @@ class HDTemperature():
             print("hddtemp could not be found, make sure you installed hddtemp")
             sys.exit(1)
 
-    def parse(self, response):
-        """
-        Parse the hddtemp output and get only the temperature values
-        """
-        temps = [t[0] for t in [re.search(self.re_hddtemp, line).groups() for line in response]]
-        return temps
-         
-
     def run_hddtemp(self):
         """
         Execute the hddtemp binary using a list of hdd locations as arguments
+
+        :returns: list of temperature values (integers)
         """
-        args = [self.hddtemp_bin] + self.hdd_list
+        args = [self.hddtemp_bin] + self.hdd_list + ['--numeric']
         response =  subprocess.check_output(args).splitlines()
-        return [l.strip().decode("utf-8") for l in response]
+        return [int(l.strip().decode("utf-8")) for l in response]
 
     def get_max_temp(self):
         """
@@ -53,11 +47,10 @@ class HDTemperature():
         :returns: Maximum value of the hdd temperatures
         :rtype: int
         """
-        raw = self.run_hddtemp()
-        temps = self.parse(raw)
-        return int(max(temps))
+        temps = self.run_hddtemp()
+        return max(temps)
 
 if __name__ == '__main__':
-    hd = HDTemperature(['/dev/sdc', '/dev/sdc1'])
+    hd = HDTemperature(['/dev/sdc', '/dev/sdc1'], 'tempread')
     print(hd.get_max_temp())
 
