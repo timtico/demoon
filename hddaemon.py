@@ -9,7 +9,15 @@ import logging
 import sys
 
 class HDDaemon(Daemon):
-    def __init__(self, config_file, *args, **kwargs):
+    """
+    This class starts a linux daemon that monitors the temperature of a set of hdds and
+    starts a fan when the temperature of atleast one of the harddrives is above a certain
+    threshold
+    
+    :param config_file: The path to `ini` configuration file (default is `/etc/hddaemon.conf`)
+    """
+    
+    def __init__(self, config_file = '/etc/hddaemon.conf', *args, **kwargs):
         self.logger = logging.getLogger('hddaemon')
         self.config_file = config_file
         self.configuration = config.parse_config(self.config_file)
@@ -21,6 +29,11 @@ class HDDaemon(Daemon):
         super().__init__(*args, **kwargs)
 
     def run(self):
+        """
+        This method is started when the demon is run, with a time interval it determines 
+        the max temperature of the set of disks using the tempread module. A method is called
+        that switches on the fan when the max temperature is found to be above a given threshold.
+        """
         while True:
             max_t = self.temp_read.get_max_temp()
             self.fan_control.adjust_to_temp(max_t)
@@ -28,7 +41,7 @@ class HDDaemon(Daemon):
 
     def print_init(self):
         """
-        Print a initalization message showing all settings
+        Print a initalization message showing all settings that were taken from the config file
         """
         self.logger.info("HDDaemon initialized")
         self.logger.info("config file: {}".format(self.config_file))
