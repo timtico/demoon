@@ -33,6 +33,7 @@ class HDTemperature():
     def run_hddtemp(self):
         """
         Execute the hddtemp binary using a list of hdd locations as arguments
+        The commandline should return an integer on each line of the stdout
 
         :returns: list of temperature values (integers)
         """
