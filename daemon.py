@@ -95,23 +95,11 @@ class Daemon:
 
         # handle the sigterm and sighup signals, call the corresponding
         # methods when this signals were received
-        signal.signal(signal.SIGTERM, self.handle_sigterm)  # Handle termination
-        signal.signal(signal.SIGHUP, self.handle_sighup)    # Handle log rotation/reload
+        signal.signal(signal.SIGTERM, self.stop)  # Handle termination
+        signal.signal(signal.SIGHUP, self.restart)    # Handle log rotation/reload
 
         atexit.register(self.cleanup)
         atexit.register(self.delete_pidfile)
-
-    
-    def handle_sigterm(self, signum, frame):
-        ''' Gracefully shut down the daemon when SIGTERM is received '''
-        self.logger.info("Received SIGTERM, shutting down daemon.")
-        self.cleanup()  # Cleanup before exiting
-        sys.exit(0)  # Exit cleanly
-
-    def handle_sighup(self, signum, frame):
-        ''' Reload configuration when SIGHUP is received '''
-        self.logger.info("Received SIGHUP, reloading configuration...")
-        #self.load_config()  # Custom function to reload settings
 
     def read_pidfile(self):
         ''' Check for a pidfile. If pidfile exists it is returned
