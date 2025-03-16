@@ -91,9 +91,27 @@ class Daemon:
 
         # register function to be executed at termination
         # the pidfile should be deleted on exiting
+
+
+        # handle the sigterm and sighup signals, call the corresponding
+        # methods when this signals were received
+        signal.signal(signal.SIGTERM, self.handle_sigterm)  # Handle termination
+        signal.signal(signal.SIGHUP, self.handle_sighup)    # Handle log rotation/reload
+
+        atexit.register(self.cleanup)
         atexit.register(self.delete_pidfile)
 
+    
+    def handle_sigterm(self, signum, frame):
+        ''' Gracefully shut down the daemon when SIGTERM is received '''
+        self.logger.info("Received SIGTERM, shutting down daemon.")
+        self.cleanup()  # Cleanup before exiting
+        sys.exit(0)  # Exit cleanly
 
+    def handle_sighup(self, signum, frame):
+        ''' Reload configuration when SIGHUP is received '''
+        self.logger.info("Received SIGHUP, reloading configuration...")
+        #self.load_config()  # Custom function to reload settings
 
     def read_pidfile(self):
         ''' Check for a pidfile. If pidfile exists it is returned
@@ -120,42 +138,49 @@ class Daemon:
         self.daemonize()
         self.run()
 
-def stop(self):
-    ''' Check if the daemon is running; if it is, terminate it safely '''
-    pid = self.read_pidfile()
-
-    if not pid:
-        self.logger.warning(
-            f"PID file {self.pidfile} does not exist, assuming daemon is not running."
-        )
-        return
-
-    self.logger.info("Stopping {type(self).__name__} daemon (pid={pid})")
-
-    try:
-        # Verify that the process still exists
-        if os.path.exists(f"/proc/{pid}"):  
-            os.kill(pid, signal.SIGTERM)  # Send termination signal
-            time.sleep(0.1)  # Allow time for termination
-
-            # Wait for the process to exit
-            while os.path.exists(f"/proc/{pid}"):
-                time.sleep(0.5)
-
-        # Remove PID file only after ensuring process is dead
-        if os.path.exists(self.pidfile):
-            os.remove(self.pidfile)
-            self.logger.info("Removed PID file: {}".format(self.pidfile))
-
-    except OSError as err:
-        self.logger.error("Error stopping daemon: {}".format(err))
-        sys.exit(1)
+    def stop(self):
+        ''' Check if the daemon is running; if it is, terminate it safely '''
+        pid = self.read_pidfile()
+    
+        if not pid:
+            self.logger.warning(
+                f"PID file {self.pidfile} does not exist, assuming daemon is not running."
+            )
+            return
+    
+        self.logger.info("Stopping {type(self).__name__} daemon (pid={pid})")
+    
+        try:
+            # Verify that the process still exists
+            if os.path.exists(f"/proc/{pid}"):  
+                os.kill(pid, signal.SIGTERM)  # Send termination signal
+                time.sleep(0.1)  # Allow time for termination
+    
+                # Wait for the process to exit
+                while os.path.exists(f"/proc/{pid}"):
+                    time.sleep(0.5)
+    
+            # Remove PID file only after ensuring process is dead
+            if os.path.exists(self.pidfile):
+                os.remove(self.pidfile)
+                self.logger.info("Removed PID file: {}".format(self.pidfile))
+    
+        except OSError as err:
+            self.logger.error("Error stopping daemon: {}".format(err))
+            sys.exit(1)
 
     def restart(self):
         ''' restarting is nothing more than a stop and a start '''
         self.stop()
         self.start()
 
+    def cleanup(self):
+        ''' Cleanup tasks before shutting down '''
+        self.logger.info("Cleaning up before exit.")
+        if os.path.exists(self.pidfile):
+            os.remove(self.pidfile)
+            self.logger.info("Removed PID file: {}".format(self.pidfile))
+            
     def run(self):
         ''' overwrite this method to create your own daemon. it 
         will be called after the demon is started or restarted '''
