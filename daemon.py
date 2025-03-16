@@ -120,28 +120,36 @@ class Daemon:
         self.daemonize()
         self.run()
 
-    def stop(self):
-        ''' Check if the daemon is running if it's running kill it '''
-        pid = self.read_pidfile()
-        self.logger.info("stopping {} daemon (pid={})".format(type(self).__name__, pid))
+def stop(self):
+    ''' Check if the daemon is running; if it is, terminate it safely '''
+    pid = self.read_pidfile()
 
-        if not pid:
-            self.logger.warning(
-                "pidfile {} does not exists, assuming daemon is not running, exiting".format(self.pidfile))
-            return
+    if not pid:
+        self.logger.warning(
+            f"PID file {self.pidfile} does not exist, assuming daemon is not running."
+        )
+        return
 
-        try:
-            while 1:
-                os.kill(pid, signal.SIGTERM)
-                time.sleep(0.1)
-        except OSError as err:
-            e = str(err.args)
-            if e.find("No such process") > 0:
-                if os.path.exists(self.pidfile):
-                    os.remove(self.pidfile)
-            else:
-                self.logger.warning(str(e.args))
-                sys.exit()
+    self.logger.info("Stopping {type(self).__name__} daemon (pid={pid})")
+
+    try:
+        # Verify that the process still exists
+        if os.path.exists(f"/proc/{pid}"):  
+            os.kill(pid, signal.SIGTERM)  # Send termination signal
+            time.sleep(0.1)  # Allow time for termination
+
+            # Wait for the process to exit
+            while os.path.exists(f"/proc/{pid}"):
+                time.sleep(0.5)
+
+        # Remove PID file only after ensuring process is dead
+        if os.path.exists(self.pidfile):
+            os.remove(self.pidfile)
+            self.logger.info("Removed PID file: {}".format(self.pidfile))
+
+    except OSError as err:
+        self.logger.error("Error stopping daemon: {}".format(err))
+        sys.exit(1)
 
     def restart(self):
         ''' restarting is nothing more than a stop and a start '''
